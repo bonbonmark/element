@@ -105,6 +105,7 @@
               :value="value"
               :default-value="defaultValue ? new Date(defaultValue) : null"
               :date="date"
+              :yearOffset="yearOffset"
               :disabled-date="disabledDate">
             </year-table>
             <month-table
@@ -326,10 +327,10 @@
 
       handleMonthPick(month) {
         if (this.selectionMode === 'month') {
-          this.date = modifyDate(this.date, this.year, month, 1);
+          this.date = modifyDate(this.date, this.year + this.yearOffset, month, 1);
           this.emit(this.date);
         } else {
-          this.date = changeYearMonthAndClampDate(this.date, this.year, month);
+          this.date = changeYearMonthAndClampDate(this.date, this.year + this.yearOffset, month);
           // TODO: should emit intermediate value ??
           // this.emit(this.date);
           this.currentView = 'date';
@@ -356,10 +357,10 @@
 
       handleYearPick(year) {
         if (this.selectionMode === 'year') {
-          this.date = modifyDate(this.date, year, 0, 1);
+          this.date = modifyDate(this.date, year + this.yearOffset, 0, 1);
           this.emit(this.date);
         } else {
-          this.date = changeYearMonthAndClampDate(this.date, year, this.month);
+          this.date = changeYearMonthAndClampDate(this.date, year + this.yearOffset, this.month);
           // TODO: should emit intermediate value ??
           // this.emit(this.date, true);
           this.currentView = 'month';
@@ -455,7 +456,8 @@
       },
 
       handleVisibleTimeChange(value) {
-        const time = parseDate(value, this.timeFormat);
+        const dateValue = this.handleOffsetYear(value);
+        const time = parseDate(dateValue, this.timeFormat, this.yearOffset);
         if (time && this.checkDateWithinRange(time)) {
           this.date = modifyDate(time, this.year, this.month, this.monthDate);
           this.userInputTime = null;
@@ -465,8 +467,12 @@
         }
       },
 
+      handleOffsetYear(value) {
+        return value;
+      },
+
       handleVisibleDateChange(value) {
-        const date = parseDate(value, this.dateFormat);
+        const date = parseDate(value, this.dateFormat, this.yearOffset);
         if (date) {
           if (typeof this.disabledDate === 'function' && this.disabledDate(date)) {
             return;
@@ -524,13 +530,14 @@
         format: '',
         arrowControl: false,
         userInputDate: null,
-        userInputTime: null
+        userInputTime: null,
+        yearOffset: 0
       };
     },
 
     computed: {
       year() {
-        return this.date.getFullYear();
+        return this.date.getFullYear() - this.yearOffset;
       },
 
       month() {
@@ -553,7 +560,7 @@
         if (this.userInputTime !== null) {
           return this.userInputTime;
         } else {
-          return formatDate(this.value || this.defaultValue, this.timeFormat);
+          return formatDate(this.value || this.defaultValue, this.timeFormat, this.yearOffset);
         }
       },
 
@@ -561,7 +568,7 @@
         if (this.userInputDate !== null) {
           return this.userInputDate;
         } else {
-          return formatDate(this.value || this.defaultValue, this.dateFormat);
+          return formatDate(this.value || this.defaultValue, this.dateFormat, this.yearOffset);
         }
       },
 

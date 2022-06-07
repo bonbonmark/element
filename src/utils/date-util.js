@@ -37,14 +37,46 @@ export const isDateObject = function(val) {
   return val instanceof Date;
 };
 
-export const formatDate = function(date, format) {
+export const formatDate = function(date, format, yearOffset) {
   date = toDate(date);
   if (!date) return '';
-  return fecha.format(date, format || 'yyyy-MM-dd', getI18nSettings());
+  const actualFormat = format || 'yyyy-MM-dd';
+  if (!yearOffset) {
+    return fecha.format(date, actualFormat, getI18nSettings());
+  } else {
+    const monthLocation = actualFormat.indexOf('M');
+    const yearEndLocation = actualFormat.lastIndexOf('y') + 1;
+    const yearFormat = actualFormat.substr(0, yearEndLocation);
+    const remainFormat = actualFormat.substr(monthLocation);
+    let linkStr = '';
+    if (yearEndLocation !== monthLocation) {
+      linkStr = actualFormat.substr(yearEndLocation, 1);
+    }
+    let year = Number(fecha.format(date, yearFormat, getI18nSettings()));
+    year = year - yearOffset;
+    if (year <= 999 && year >= 99) {
+      year = '0' + year;
+    }
+    const remainStr = fecha.format(date, remainFormat, getI18nSettings());
+    return year + linkStr + remainStr;
+  }
 };
 
-export const parseDate = function(string, format) {
-  return fecha.parse(string, format || 'yyyy-MM-dd', getI18nSettings());
+export const parseDate = function(string, format, yearOffset) {
+  const actualFormat = format || 'yyyy-MM-dd';
+  const dateStrLen = string.length;
+  const formatLen = actualFormat.length;
+  if (yearOffset === 0) {
+    return fecha.parse(string, actualFormat, getI18nSettings());
+  } else if (dateStrLen === formatLen) {
+    const yearLocationStart = actualFormat.indexOf('y');
+    const yearLocationEnd = actualFormat.lastIndexOf('y');
+    const year = Number(string.substr(yearLocationStart, yearLocationEnd)) + yearOffset;
+    const dateStr = year + string.substr(yearLocationEnd);
+    return fecha.parse(dateStr, actualFormat, getI18nSettings());
+  } else {
+    return;
+  }
 };
 
 export const getDayCountOfMonth = function(year, month) {

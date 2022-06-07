@@ -134,21 +134,21 @@ const HAVE_TRIGGER_TYPES = [
   'datetimerange',
   'dates'
 ];
-const DATE_FORMATTER = function(value, format) {
+const DATE_FORMATTER = function(value, format, yearOffset) {
   if (format === 'timestamp') return value.getTime();
-  return formatDate(value, format);
+  return formatDate(value, format, yearOffset);
 };
-const DATE_PARSER = function(text, format) {
+const DATE_PARSER = function(text, format, yearOffset) {
   if (format === 'timestamp') return new Date(Number(text));
-  return parseDate(text, format);
+  return parseDate(text, format, yearOffset);
 };
-const RANGE_FORMATTER = function(value, format) {
+const RANGE_FORMATTER = function(value, format, yearOffset) {
   if (Array.isArray(value) && value.length === 2) {
     const start = value[0];
     const end = value[1];
 
     if (start && end) {
-      return [DATE_FORMATTER(start, format), DATE_FORMATTER(end, format)];
+      return [DATE_FORMATTER(start, format, yearOffset), DATE_FORMATTER(end, format, yearOffset)];
     }
   }
   return '';
@@ -177,7 +177,7 @@ const TYPE_VALUE_RESOLVER_MAP = {
     }
   },
   week: {
-    formatter(value, format) {
+    formatter(value, format, yearOffset) {
       let week = getWeekNumber(value);
       let month = value.getMonth();
       const trueDate = new Date(value);
@@ -185,7 +185,7 @@ const TYPE_VALUE_RESOLVER_MAP = {
         trueDate.setHours(0, 0, 0, 0);
         trueDate.setDate(trueDate.getDate() + 3 - (trueDate.getDay() + 6) % 7);
       }
-      let date = formatDate(trueDate, format);
+      let date = formatDate(trueDate, format, yearOffset);
 
       date = /WW/.test(date)
         ? date.replace(/WW/, week < 10 ? '0' + week : week)
@@ -249,12 +249,12 @@ const TYPE_VALUE_RESOLVER_MAP = {
     }
   },
   dates: {
-    formatter(value, format) {
-      return value.map(date => DATE_FORMATTER(date, format));
+    formatter(value, format, yearOffset) {
+      return value.map(date => DATE_FORMATTER(date, format, yearOffset));
     },
-    parser(value, format) {
+    parser(value, format, yearOffset) {
       return (typeof value === 'string' ? value.split(', ') : value)
-        .map(date => date instanceof Date ? date : DATE_PARSER(date, format));
+        .map(date => date instanceof Date ? date : DATE_PARSER(date, format, yearOffset));
     }
   }
 };
@@ -264,24 +264,24 @@ const PLACEMENT_MAP = {
   right: 'bottom-end'
 };
 
-const parseAsFormatAndType = (value, customFormat, type, rangeSeparator = '-') => {
+const parseAsFormatAndType = (value, customFormat, type, rangeSeparator = '-', yearOffset) => {
   if (!value) return null;
   const parser = (
     TYPE_VALUE_RESOLVER_MAP[type] ||
     TYPE_VALUE_RESOLVER_MAP['default']
   ).parser;
   const format = customFormat || DEFAULT_FORMATS[type];
-  return parser(value, format, rangeSeparator);
+  return parser(value, format, rangeSeparator, yearOffset);
 };
 
-const formatAsFormatAndType = (value, customFormat, type) => {
+const formatAsFormatAndType = (value, customFormat, type, yearOffset) => {
   if (!value) return null;
   const formatter = (
     TYPE_VALUE_RESOLVER_MAP[type] ||
     TYPE_VALUE_RESOLVER_MAP['default']
   ).formatter;
   const format = customFormat || DEFAULT_FORMATS[type];
-  return formatter(value, format);
+  return formatter(value, format, yearOffset);
 };
 
 /*
@@ -353,6 +353,7 @@ export default {
     startPlaceholder: String,
     endPlaceholder: String,
     prefixIcon: String,
+    yearOffset: String,
     clearIcon: {
       type: String,
       default: 'el-icon-circle-close'
@@ -504,7 +505,7 @@ export default {
     },
 
     displayValue() {
-      const formattedValue = formatAsFormatAndType(this.parsedValue, this.format, this.type, this.rangeSeparator);
+      const formattedValue = formatAsFormatAndType(this.parsedValue, this.format, this.type, this.yearOffset);
       if (Array.isArray(this.userInput)) {
         return [
           this.userInput[0] || (formattedValue && formattedValue[0]) || '',
@@ -531,7 +532,7 @@ export default {
       }
 
       if (this.valueFormat) {
-        return parseAsFormatAndType(this.value, this.valueFormat, this.type, this.rangeSeparator) || this.value;
+        return parseAsFormatAndType(this.value, this.valueFormat, this.type, this.rangeSeparator, this.yearOffset) || this.value;
       }
 
       // NOTE: deal with common but incorrect usage, should remove in next major version
@@ -836,6 +837,7 @@ export default {
       this.$watch('format', (format) => {
         this.picker.format = format;
       });
+      this.picker.yearOffset = Number(this.yearOffset);
 
       const updateOptions = () => {
         const options = this.pickerOptions;

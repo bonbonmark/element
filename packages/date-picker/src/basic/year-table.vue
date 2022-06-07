@@ -64,12 +64,13 @@
           return val === null || (val instanceof Date && isDate(val));
         }
       },
-      date: {}
+      date: {},
+      yearOffset: 0
     },
 
     computed: {
       startYear() {
-        return Math.floor(this.date.getFullYear() / 10) * 10;
+        return Math.floor((this.date.getFullYear() - this.yearOffset) / 10) * 10;
       }
     },
 
