@@ -70,9 +70,8 @@ export const parseDate = function(string, format, yearOffset) {
     return fecha.parse(string, actualFormat, getI18nSettings());
   } else if (dateStrLen === formatLen) {
     const yearLocationStart = actualFormat.indexOf('y');
-    const yearLocationEnd = actualFormat.lastIndexOf('y');
-    const year = Number(string.substr(yearLocationStart, yearLocationEnd)) + yearOffset;
-    const dateStr = year + string.substr(yearLocationEnd);
+    const year = Number(string.substr(yearLocationStart, 4)) + Number(yearOffset);
+    const dateStr = year + string.substr(4);
     return fecha.parse(dateStr, actualFormat, getI18nSettings());
   } else {
     return;

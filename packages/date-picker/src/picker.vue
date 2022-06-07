@@ -264,14 +264,14 @@ const PLACEMENT_MAP = {
   right: 'bottom-end'
 };
 
-const parseAsFormatAndType = (value, customFormat, type, rangeSeparator = '-', yearOffset) => {
+const parseAsFormatAndType = (value, customFormat, type, rangeSeparator, yearOffset) => {
   if (!value) return null;
   const parser = (
     TYPE_VALUE_RESOLVER_MAP[type] ||
     TYPE_VALUE_RESOLVER_MAP['default']
   ).parser;
   const format = customFormat || DEFAULT_FORMATS[type];
-  return parser(value, format, rangeSeparator, yearOffset);
+  return parser(value, format, yearOffset);
 };
 
 const formatAsFormatAndType = (value, customFormat, type, yearOffset) => {
@@ -603,7 +603,7 @@ export default {
     parseValue(value) {
       const isParsed = isDateObject(value) || (Array.isArray(value) && value.every(isDateObject));
       if (this.valueFormat && !isParsed) {
-        return parseAsFormatAndType(value, this.valueFormat, this.type, this.rangeSeparator) || value;
+        return parseAsFormatAndType(value, this.valueFormat, this.type, this.rangeSeparator, this.yearOffset) || value;
       } else {
         return value;
       }
@@ -621,7 +621,7 @@ export default {
     // {parse, formatTo} String deals with user input
     parseString(value) {
       const type = Array.isArray(value) ? this.type : this.type.replace('range', '');
-      return parseAsFormatAndType(value, this.format, type);
+      return parseAsFormatAndType(value, this.format, type, '-', this.yearOffset);
     },
 
     formatToString(value) {
@@ -718,7 +718,7 @@ export default {
 
       if (this.type === 'dates') {
         // restore to former value
-        const oldValue = parseAsFormatAndType(this.valueOnOpen, this.valueFormat, this.type, this.rangeSeparator) || this.valueOnOpen;
+        const oldValue = parseAsFormatAndType(this.valueOnOpen, this.valueFormat, this.type, this.rangeSeparator, this.yearOffset) || this.valueOnOpen;
         this.emitInput(oldValue);
       }
     },
